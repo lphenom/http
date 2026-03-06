@@ -1,0 +1,39 @@
+{
+    "name": "lphenom/http",
+    "description": "LPhenom HTTP layer — request, response, router, middleware (KPHP-compatible)",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["lphenom", "framework", "http", "router", "middleware", "kphp"],
+    "homepage": "https://github.com/lphenom/http",
+    "authors": [
+        {
+            "name": "LPhenom Contributors",
+            "homepage": "https://github.com/lphenom"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "lphenom/core": "^0.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "phpstan/phpstan": "^1.12",
+        "friendsofphp/php-cs-fixer": "^3.64"
+    },
+    "autoload": {
+        "psr-4": {
+            "LPhenom\\Http\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LPhenom\\Http\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable"
+}
+
