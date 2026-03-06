@@ -16,4 +16,3 @@ interface MiddlewareInterface
 {
     public function process(Request $request, Next $next): Response;
 }
-

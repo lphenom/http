@@ -4,6 +4,8 @@ parameters:
         - src
         - tests
     phpVersion: 80100
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
-
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - message: '#Property class@anonymous.* is never read, only written#'
+          path: tests/

@@ -30,4 +30,3 @@ final class MiddlewareStack
         return $next($request);
     }
 }
-

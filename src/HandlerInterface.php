@@ -13,4 +13,3 @@ interface HandlerInterface
 {
     public function handle(Request $request): Response;
 }
-

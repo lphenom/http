@@ -198,4 +198,3 @@ final class Request
         return new self($method, $path, $query, $headers, $cookies, $body, $files, $clientIp);
     }
 }
-

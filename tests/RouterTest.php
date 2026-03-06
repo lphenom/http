@@ -16,14 +16,9 @@ final class RouterTest extends TestCase
     // Helpers
     // -------------------------------------------------------------------------
 
-    private function makeRequest(string $method, string $path): Request
-    {
-        return new Request($method, $path, [], [], [], '', [], '127.0.0.1');
-    }
-
     private function makeHandler(): HandlerInterface
     {
-        return new class implements HandlerInterface {
+        return new class () implements HandlerInterface {
             public function handle(Request $request): Response
             {
                 return Response::text('ok');
@@ -224,4 +219,3 @@ final class RouterTest extends TestCase
         self::assertNotNull($router->match('GET', '/'));
     }
 }
-

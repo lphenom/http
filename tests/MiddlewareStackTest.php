@@ -104,7 +104,7 @@ final class MiddlewareStackTest extends TestCase
 
     public function testMiddlewareCanShortCircuit(): void
     {
-        $blockingMiddleware = new class implements MiddlewareInterface {
+        $blockingMiddleware = new class () implements MiddlewareInterface {
             public function process(Request $request, Next $next): Response
             {
                 return Response::text('Blocked', 403);
@@ -201,7 +201,7 @@ final class MiddlewareStackTest extends TestCase
 
     public function testRateLimitAllowsRequest(): void
     {
-        $limiter = new class implements RateLimiterInterface {
+        $limiter = new class () implements RateLimiterInterface {
             public function isAllowed(string $clientIp): bool
             {
                 return true;
@@ -218,7 +218,7 @@ final class MiddlewareStackTest extends TestCase
 
     public function testRateLimitBlocksRequest(): void
     {
-        $limiter = new class implements RateLimiterInterface {
+        $limiter = new class () implements RateLimiterInterface {
             public function isAllowed(string $clientIp): bool
             {
                 return false;
@@ -279,4 +279,3 @@ final class MiddlewareStackTest extends TestCase
         self::assertSame(200, $response->getStatus());
     }
 }
-

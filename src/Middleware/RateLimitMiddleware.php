@@ -34,4 +34,3 @@ final class RateLimitMiddleware implements MiddlewareInterface
         return $next($request);
     }
 }
-

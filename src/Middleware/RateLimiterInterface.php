@@ -21,4 +21,3 @@ interface RateLimiterInterface
      */
     public function isAllowed(string $clientIp): bool;
 }
-

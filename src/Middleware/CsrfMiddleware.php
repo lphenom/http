@@ -57,4 +57,3 @@ final class CsrfMiddleware implements MiddlewareInterface
         return hash_hmac('sha256', $sessionId, $this->secret);
     }
 }
-

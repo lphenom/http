@@ -36,7 +36,6 @@ final class Router
     public function add(string $method, string $path, HandlerInterface $handler): self
     {
         $fullPath = $this->currentPrefix . '/' . ltrim($path, '/');
-        $fullPath = $fullPath === '' ? '/' : $fullPath;
 
         // Normalize double slashes
         while (str_contains($fullPath, '//')) {
@@ -183,8 +182,8 @@ final class Router
                 /** @var array<string, string> $params */
                 $params = [];
                 foreach ($route['params'] as $name) {
-                    if (isset($matches[$name]) && is_string($matches[$name])) {
-                        $params[$name] = $matches[$name];
+                    if (isset($matches[$name])) {
+                        $params[$name] = (string) $matches[$name];
                     }
                 }
                 return ['handler' => $route['handler'], 'params' => $params];
@@ -271,5 +270,3 @@ final class Router
         return $segment;
     }
 }
-
-

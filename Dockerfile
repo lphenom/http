@@ -13,15 +13,6 @@ COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Copy composer files first for layer caching
-COPY composer.json ./
-
-# Install dependencies
-RUN composer install --no-scripts --no-autoloader 2>/dev/null || true
-
-COPY . .
-
-RUN composer install --optimize-autoloader
 
 CMD ["php", "-v"]
 

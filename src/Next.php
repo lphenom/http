@@ -37,4 +37,3 @@ final class Next
         return $this->handler->handle($request);
     }
 }
-
