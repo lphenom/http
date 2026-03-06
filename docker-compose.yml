@@ -9,7 +9,6 @@ services:
     container_name: lphenom_http_app
     volumes:
       - .:/app
-      - ../core:/core:ro
     working_dir: /app
     environment:
       - COMPOSER_HOME=/tmp/composer
