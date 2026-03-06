@@ -217,20 +217,6 @@ final class Router
     private function compilePattern(string $pattern): array
     {
         $params = [];
-        $regex = preg_replace_callback(
-            '/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/',
-            static function (array $m) use (&$params): string {
-                $params[] = $m[1];
-                return '(?P<' . $m[1] . '>[^/]+)';
-            },
-            preg_quote($pattern, '#')
-        );
-
-        // preg_quote escapes { } — undo for our replacement tokens
-        // Actually we run callback before quote — let's redo correctly:
-        // We need to quote everything EXCEPT our {param} tokens.
-        // Re-implement without preg_quote on the whole string:
-        $params = [];
         $regex = $this->buildRegex($pattern, $params);
 
         return [$regex, $params];
@@ -285,4 +271,5 @@ final class Router
         return $segment;
     }
 }
+
 

@@ -20,13 +20,13 @@ install:
 test:
 	docker compose run --rm app ./vendor/bin/phpunit
 
-## Run PHP_CodeSniffer (PSR-12)
+## Run PHP-CS-Fixer (lint)
 lint:
-	docker compose run --rm app ./vendor/bin/php-cs-fixer fix src tests --dry-run --diff --allow-risky=yes
+	docker compose run --rm app ./vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
 
 ## Fix code style
 fix:
-	docker compose run --rm app ./vendor/bin/php-cs-fixer fix src tests --allow-risky=yes
+	docker compose run --rm app ./vendor/bin/php-cs-fixer fix --allow-risky=yes
 
 ## Run PHPStan static analysis
 stan:
