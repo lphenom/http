@@ -15,7 +15,7 @@ final class Next
     private int $index = 0;
 
     /**
-     * @param MiddlewareInterface[] $middleware
+     * @param array<int, MiddlewareInterface> $middleware
      */
     public function __construct(
         private readonly array $middleware,

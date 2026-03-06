@@ -51,21 +51,21 @@ final class Response
         return $this->body;
     }
 
-    public function withStatus(int $status): static
+    public function withStatus(int $status): self
     {
         $clone = clone $this;
         $clone->status = $status;
         return $clone;
     }
 
-    public function withHeader(string $name, string $value): static
+    public function withHeader(string $name, string $value): self
     {
         $clone = clone $this;
         $clone->headers[$name] = $value;
         return $clone;
     }
 
-    public function withBody(string $body): static
+    public function withBody(string $body): self
     {
         $clone = clone $this;
         $clone->body = $body;
@@ -77,26 +77,26 @@ final class Response
      *
      * @param array<string, mixed> $data
      */
-    public static function json(array $data, int $status = 200): static
+    public static function json(array $data, int $status = 200): self
     {
         $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        return new static($status, ['Content-Type' => 'application/json'], $encoded);
+        return new self($status, ['Content-Type' => 'application/json'], $encoded);
     }
 
     /**
      * Create a plain-text response.
      */
-    public static function text(string $text, int $status = 200): static
+    public static function text(string $text, int $status = 200): self
     {
-        return new static($status, ['Content-Type' => 'text/plain; charset=UTF-8'], $text);
+        return new self($status, ['Content-Type' => 'text/plain; charset=UTF-8'], $text);
     }
 
     /**
      * Create a redirect response.
      */
-    public static function redirect(string $url, int $status = 302): static
+    public static function redirect(string $url, int $status = 302): self
     {
-        return new static($status, ['Location' => $url], '');
+        return new self($status, ['Location' => $url], '');
     }
 
     /**

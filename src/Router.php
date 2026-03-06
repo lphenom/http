@@ -26,7 +26,7 @@ final class Router
     /**
      * Prefix index: first path segment → list of route indices.
      *
-     * @var array<string, int[]>
+     * @var array<string, array<int, int>>
      */
     private array $index = [];
 
@@ -111,9 +111,9 @@ final class Router
      * Group routes under a common prefix.
      * Callback receives this Router instance.
      *
-     * @param callable(self): void $callback
+     * @param \Closure(self): void $callback
      */
-    public function group(string $prefix, callable $callback): self
+    public function group(string $prefix, \Closure $callback): self
     {
         $previousPrefix = $this->currentPrefix;
         $this->currentPrefix = $previousPrefix . '/' . ltrim($prefix, '/');
@@ -140,13 +140,10 @@ final class Router
     /**
      * Match method + path against registered routes.
      *
-     * Returns ['handler' => HandlerInterface, 'params' => array<string,string>] or null.
-     *
+     * Returns RouteMatch with handler and extracted params, or null if no match.
      * Uses prefix index to skip irrelevant routes.
-     *
-     * @return array{handler: HandlerInterface, params: array<string, string>}|null
      */
-    public function match(string $method, string $path): ?array
+    public function match(string $method, string $path): ?RouteMatch
     {
         $method = strtoupper($method);
         $path = $path === '' ? '/' : $path;
@@ -171,7 +168,7 @@ final class Router
             if ($route['params'] === []) {
                 // Static route — direct comparison
                 if ($route['pattern'] === $path) {
-                    return ['handler' => $route['handler'], 'params' => []];
+                    return new RouteMatch($route['handler'], []);
                 }
                 continue;
             }
@@ -186,7 +183,7 @@ final class Router
                         $params[$name] = (string) $matches[$name];
                     }
                 }
-                return ['handler' => $route['handler'], 'params' => $params];
+                return new RouteMatch($route['handler'], $params);
             }
         }
 

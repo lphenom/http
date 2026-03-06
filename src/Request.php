@@ -112,13 +112,14 @@ final class Request
             return [];
         }
 
+        /** @var mixed $decoded */
         $decoded = json_decode($this->body, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException('Invalid JSON body: ' . json_last_error_msg());
         }
 
-        if (!is_array($decoded)) {
+        if (!\is_array($decoded)) {
             throw new \RuntimeException('JSON body must be an object or array, got scalar');
         }
 
@@ -177,7 +178,8 @@ final class Request
             }
         }
 
-        $body = (string) file_get_contents('php://input');
+        $rawBody = file_get_contents('php://input');
+        $body = $rawBody !== false ? $rawBody : '';
 
         /** @var array<string, mixed> $files */
         $files = [];

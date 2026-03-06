@@ -7,6 +7,7 @@ namespace LPhenom\Http\Tests;
 use LPhenom\Http\HandlerInterface;
 use LPhenom\Http\Request;
 use LPhenom\Http\Response;
+use LPhenom\Http\RouteMatch;
 use LPhenom\Http\Router;
 use PHPUnit\Framework\TestCase;
 
@@ -39,8 +40,9 @@ final class RouterTest extends TestCase
         $result = $router->match('GET', '/users');
 
         self::assertNotNull($result);
-        self::assertSame($handler, $result['handler']);
-        self::assertSame([], $result['params']);
+        self::assertInstanceOf(RouteMatch::class, $result);
+        self::assertSame($handler, $result->handler);
+        self::assertSame([], $result->params);
     }
 
     // -------------------------------------------------------------------------
@@ -55,7 +57,7 @@ final class RouterTest extends TestCase
         $result = $router->match('GET', '/users/42');
 
         self::assertNotNull($result);
-        self::assertSame(['id' => '42'], $result['params']);
+        self::assertSame(['id' => '42'], $result->params);
     }
 
     public function testDynamicRouteWithMultipleParams(): void
@@ -66,7 +68,7 @@ final class RouterTest extends TestCase
         $result = $router->match('GET', '/posts/2024/hello-world');
 
         self::assertNotNull($result);
-        self::assertSame(['year' => '2024', 'slug' => 'hello-world'], $result['params']);
+        self::assertSame(['year' => '2024', 'slug' => 'hello-world'], $result->params);
     }
 
     // -------------------------------------------------------------------------
@@ -109,7 +111,7 @@ final class RouterTest extends TestCase
         $result = $router->match('GET', '/api/users');
 
         self::assertNotNull($result);
-        self::assertSame($handler, $result['handler']);
+        self::assertSame($handler, $result->handler);
     }
 
     public function testNestedGroupPrefix(): void
@@ -123,9 +125,7 @@ final class RouterTest extends TestCase
             });
         });
 
-        $result = $router->match('GET', '/api/v1/users');
-
-        self::assertNotNull($result);
+        self::assertNotNull($router->match('GET', '/api/v1/users'));
     }
 
     public function testGroupDoesNotLeakPrefix(): void

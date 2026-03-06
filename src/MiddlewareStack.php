@@ -15,7 +15,7 @@ namespace LPhenom\Http;
  */
 final class MiddlewareStack
 {
-    /** @var MiddlewareInterface[] */
+    /** @var array<int, MiddlewareInterface> */
     private array $middleware = [];
 
     public function add(MiddlewareInterface $middleware): self
