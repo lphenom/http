@@ -41,7 +41,7 @@ final class CorsMiddleware implements MiddlewareInterface
             return $this->buildCorsResponse($allowedOrigin, new Response(204));
         }
 
-        $response = $next($request);
+        $response = $next->handle($request);
         return $this->buildCorsResponse($allowedOrigin, $response);
     }
 

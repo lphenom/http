@@ -35,7 +35,7 @@ final class CsrfMiddleware implements MiddlewareInterface
     public function process(Request $request, Next $next): Response
     {
         if (in_array(strtoupper($request->getMethod()), self::SAFE_METHODS, true)) {
-            return $next($request);
+            return $next->handle($request);
         }
 
         $expected = $this->generateToken($this->sessionId);
@@ -45,7 +45,7 @@ final class CsrfMiddleware implements MiddlewareInterface
             return Response::text('Forbidden', 403);
         }
 
-        return $next($request);
+        return $next->handle($request);
     }
 
     /**

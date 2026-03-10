@@ -27,6 +27,6 @@ final class MiddlewareStack
     public function run(Request $request, HandlerInterface $handler): Response
     {
         $next = new Next($this->middleware, $handler);
-        return $next($request);
+        return $next->handle($request);
     }
 }

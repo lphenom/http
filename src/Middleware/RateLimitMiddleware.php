@@ -31,6 +31,6 @@ final class RateLimitMiddleware implements MiddlewareInterface
             return Response::text('Too Many Requests', 429);
         }
 
-        return $next($request);
+        return $next->handle($request);
     }
 }

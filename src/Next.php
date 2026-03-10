@@ -9,6 +9,9 @@ namespace LPhenom\Http;
  *
  * Implemented as an iterable class with an index pointer — no closures,
  * no recursive calls, fully KPHP-compatible.
+ *
+ * KPHP note: __invoke() is NOT supported in KPHP.
+ * Use handle() method explicitly instead.
  */
 final class Next
 {
@@ -25,8 +28,11 @@ final class Next
 
     /**
      * Advance the pipeline by one step.
+     *
+     * KPHP-compatible replacement for __invoke().
+     * Called by middleware as $next->handle($request).
      */
-    public function __invoke(Request $request): Response
+    public function handle(Request $request): Response
     {
         if ($this->index < count($this->middleware)) {
             $current = $this->middleware[$this->index];
