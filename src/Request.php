@@ -7,26 +7,59 @@ namespace LPhenom\Http;
 /**
  * Immutable HTTP Request.
  *
- * KPHP-compatible: no reflection, no dynamic properties, no variable variables.
+ * KPHP-compatible: no reflection, no dynamic properties, no variable variables,
+ * no constructor property promotion, no readonly.
  */
 final class Request
 {
+    /** @var string */
+    private string $method;
+
+    /** @var string */
+    private string $path;
+
+    /** @var array<string, string> */
+    private array $query;
+
+    /** @var array<string, string> */
+    private array $headers;
+
+    /** @var array<string, string> */
+    private array $cookies;
+
+    /** @var string */
+    private string $body;
+
+    /** @var array<string, mixed> */
+    private array $files;
+
+    /** @var string */
+    private string $clientIp;
+
     /**
-     * @param array<string, string>       $query
-     * @param array<string, string>       $headers
-     * @param array<string, string>       $cookies
-     * @param array<string, mixed>        $files
+     * @param array<string, string> $query
+     * @param array<string, string> $headers
+     * @param array<string, string> $cookies
+     * @param array<string, mixed>  $files
      */
     public function __construct(
-        private readonly string $method,
-        private readonly string $path,
-        private readonly array $query,
-        private readonly array $headers,
-        private readonly array $cookies,
-        private readonly string $body,
-        private readonly array $files,
-        private readonly string $clientIp,
+        string $method,
+        string $path,
+        array $query,
+        array $headers,
+        array $cookies,
+        string $body,
+        array $files,
+        string $clientIp
     ) {
+        $this->method   = $method;
+        $this->path     = $path;
+        $this->query    = $query;
+        $this->headers  = $headers;
+        $this->cookies  = $cookies;
+        $this->body     = $body;
+        $this->files    = $files;
+        $this->clientIp = $clientIp;
     }
 
     public function getMethod(): string
@@ -103,6 +136,9 @@ final class Request
     /**
      * Decode JSON body.
      *
+     * KPHP note: json_last_error() and json_last_error_msg() are NOT supported in KPHP.
+     * json_decode() returns null on parse error — check for null explicitly.
+     *
      * @return array<string, mixed>
      * @throws \RuntimeException if body is not valid JSON
      */
@@ -115,8 +151,8 @@ final class Request
         /** @var mixed $decoded */
         $decoded = json_decode($this->body, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('Invalid JSON body: ' . json_last_error_msg());
+        if ($decoded === null) {
+            throw new \RuntimeException('Invalid JSON body');
         }
 
         if (!\is_array($decoded)) {

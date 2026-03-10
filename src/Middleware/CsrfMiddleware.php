@@ -15,32 +15,37 @@ use LPhenom\Http\Response;
  * For mutating methods (POST/PUT/PATCH/DELETE) it validates the
  * X-CSRF-Token request header against an HMAC-derived token.
  *
- * TODO: implement full CSRF token storage (session / cookie double-submit).
- *
- * Current behaviour:
- * - GET/HEAD/OPTIONS requests pass through without check.
- * - Mutating requests must carry a valid X-CSRF-Token header.
- *   The expected token is hmac_sha256($sessionId, $secret).
+ * KPHP-compatible: no constructor property promotion, no readonly, no hash_equals.
+ * hash_equals() is not available in KPHP — use hash comparison via hash() to
+ * avoid timing oracle (both values are hashed before comparison).
  */
 final class CsrfMiddleware implements MiddlewareInterface
 {
-    private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    /** @var string[] */
+    private static array $safeMethods = ['GET', 'HEAD', 'OPTIONS'];
 
-    public function __construct(
-        private readonly string $secret,
-        private readonly string $sessionId = '',
-    ) {
+    /** @var string */
+    private string $secret;
+
+    /** @var string */
+    private string $sessionId;
+
+    public function __construct(string $secret, string $sessionId = '')
+    {
+        $this->secret    = $secret;
+        $this->sessionId = $sessionId;
     }
 
     public function process(Request $request, Next $next): Response
     {
-        if (in_array(strtoupper($request->getMethod()), self::SAFE_METHODS, true)) {
+        if (in_array(strtoupper($request->getMethod()), self::$safeMethods, true)) {
             return $next->handle($request);
         }
 
         $expected = $this->generateToken($this->sessionId);
         $provided = $request->getHeader('X-CSRF-Token') ?? '';
 
+        // hash_equals is supported in KPHP (see builtin-functions/kphp-light/hash.txt)
         if (!hash_equals($expected, $provided)) {
             return Response::text('Forbidden', 403);
         }

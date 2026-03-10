@@ -12,18 +12,26 @@ namespace LPhenom\Http;
  *
  * KPHP note: __invoke() is NOT supported in KPHP.
  * Use handle() method explicitly instead.
+ * No constructor property promotion, no readonly.
  */
 final class Next
 {
+    /** @var array<int, MiddlewareInterface> */
+    private array $middleware;
+
+    /** @var HandlerInterface */
+    private HandlerInterface $handler;
+
+    /** @var int */
     private int $index = 0;
 
     /**
      * @param array<int, MiddlewareInterface> $middleware
      */
-    public function __construct(
-        private readonly array $middleware,
-        private readonly HandlerInterface $handler,
-    ) {
+    public function __construct(array $middleware, HandlerInterface $handler)
+    {
+        $this->middleware = $middleware;
+        $this->handler    = $handler;
     }
 
     /**

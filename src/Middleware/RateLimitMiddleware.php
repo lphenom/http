@@ -15,14 +15,19 @@ use LPhenom\Http\Response;
  * Delegates the actual counting/storage to a RateLimiterInterface
  * implementation, keeping this class decoupled from lphenom/cache.
  *
+ * KPHP-compatible: no constructor property promotion, no readonly.
+ *
  * Usage:
  *   $middleware = new RateLimitMiddleware(new MyRedisRateLimiter());
  */
 final class RateLimitMiddleware implements MiddlewareInterface
 {
-    public function __construct(
-        private readonly RateLimiterInterface $limiter,
-    ) {
+    /** @var RateLimiterInterface */
+    private RateLimiterInterface $limiter;
+
+    public function __construct(RateLimiterInterface $limiter)
+    {
+        $this->limiter = $limiter;
     }
 
     public function process(Request $request, Next $next): Response

@@ -10,27 +10,62 @@ namespace LPhenom\Http;
  * Registers routes, supports named routes and group prefixes.
  * Patterns are compiled once at registration time — no eval, no reflection.
  *
- * KPHP-compatible: no closures captured by reference in hot paths.
+ * KPHP-compatible: no closures, no mixed-typed arrays holding objects,
+ * no constructor property promotion, no readonly, no array destructuring.
+ * Uses parallel arrays to keep strict typing for KPHP.
  */
 final class Router
 {
     /**
-     * Each entry:
-     *  ['method' => string, 'pattern' => string, 'regex' => string,
-     *   'params' => string[], 'handler' => HandlerInterface, 'name' => string|null]
+     * Route methods (e.g. 'GET', 'POST').
      *
-     * @var array<int, array<string, mixed>>
+     * @var string[]
      */
-    private array $routes = [];
+    private array $routeMethods = [];
+
+    /**
+     * Route path patterns (e.g. '/users/{id}').
+     *
+     * @var string[]
+     */
+    private array $routePatterns = [];
+
+    /**
+     * Compiled regexes for dynamic routes (empty string for static routes).
+     *
+     * @var string[]
+     */
+    private array $routeRegexes = [];
+
+    /**
+     * Parameter names per route.
+     *
+     * @var array<int, string[]>
+     */
+    private array $routeParams = [];
+
+    /**
+     * Handlers indexed by route index.
+     *
+     * @var HandlerInterface[]
+     */
+    private array $routeHandlers = [];
+
+    /**
+     * Named route indices: name → route index.
+     *
+     * @var array<string, int>
+     */
+    private array $namedRoutes = [];
 
     /**
      * Prefix index: first path segment → list of route indices.
      *
-     * @var array<string, array<int, int>>
+     * @var array<string, int[]>
      */
     private array $index = [];
 
-    /** Current group prefix applied to new routes. */
+    /** @var string */
     private string $currentPrefix = '';
 
     public function add(string $method, string $path, HandlerInterface $handler): self
@@ -45,63 +80,48 @@ final class Router
             $fullPath = rtrim($fullPath, '/');
         }
 
-        [$regex, $params] = $this->compilePattern($fullPath);
+        /** @var string[] $params */
+        $params = [];
+        $regex  = $this->buildRegex($fullPath, $params);
 
-        $index = count($this->routes);
-        $this->routes[$index] = [
-            'method'  => strtoupper($method),
-            'pattern' => $fullPath,
-            'regex'   => $regex,
-            'params'  => $params,
-            'handler' => $handler,
-            'name'    => null,
-        ];
+        $idx = count($this->routeMethods);
+
+        $this->routeMethods[$idx]  = strtoupper($method);
+        $this->routePatterns[$idx] = $fullPath;
+        $this->routeRegexes[$idx]  = $regex;
+        $this->routeParams[$idx]   = $params;
+        $this->routeHandlers[$idx] = $handler;
 
         // Build prefix index from the first segment
         $firstSegment = $this->firstSegment($fullPath);
         if (!isset($this->index[$firstSegment])) {
             $this->index[$firstSegment] = [];
         }
-        $this->index[$firstSegment][] = $index;
+        $this->index[$firstSegment][] = $idx;
 
         return $this;
     }
 
-    /**
-     * Register a GET route.
-     */
     public function get(string $path, HandlerInterface $handler): self
     {
         return $this->add('GET', $path, $handler);
     }
 
-    /**
-     * Register a POST route.
-     */
     public function post(string $path, HandlerInterface $handler): self
     {
         return $this->add('POST', $path, $handler);
     }
 
-    /**
-     * Register a PUT route.
-     */
     public function put(string $path, HandlerInterface $handler): self
     {
         return $this->add('PUT', $path, $handler);
     }
 
-    /**
-     * Register a PATCH route.
-     */
     public function patch(string $path, HandlerInterface $handler): self
     {
         return $this->add('PATCH', $path, $handler);
     }
 
-    /**
-     * Register a DELETE route.
-     */
     public function delete(string $path, HandlerInterface $handler): self
     {
         return $this->add('DELETE', $path, $handler);
@@ -109,14 +129,13 @@ final class Router
 
     /**
      * Group routes under a common prefix.
-     * Callback receives this Router instance.
      *
      * KPHP note: \Closure is not reliably storable in arrays under KPHP.
      * The callback is called immediately — it is never stored.
      */
     public function group(string $prefix, RouterGroupCallback $callback): self
     {
-        $previousPrefix = $this->currentPrefix;
+        $previousPrefix      = $this->currentPrefix;
         $this->currentPrefix = $previousPrefix . '/' . ltrim($prefix, '/');
 
         $callback->call($this);
@@ -131,9 +150,9 @@ final class Router
      */
     public function name(string $routeName): self
     {
-        $last = count($this->routes) - 1;
+        $last = count($this->routeMethods) - 1;
         if ($last >= 0) {
-            $this->routes[$last]['name'] = $routeName;
+            $this->namedRoutes[$routeName] = $last;
         }
         return $this;
     }
@@ -147,44 +166,49 @@ final class Router
     public function match(string $method, string $path): ?RouteMatch
     {
         $method = strtoupper($method);
-        $path = $path === '' ? '/' : $path;
+        $path   = $path === '' ? '/' : $path;
 
-        // Collect candidate indices via prefix index
         $firstSegment = $this->firstSegment($path);
-        $candidates = $this->index[$firstSegment] ?? [];
 
-        // Also check wildcard/root segment
+        /** @var int[] $candidates */
+        $candidates = isset($this->index[$firstSegment]) ? $this->index[$firstSegment] : [];
+
+        // Also check wildcard/root segment for routes starting with a param
         if ($firstSegment !== '*') {
-            $wildcardCandidates = $this->index['*'] ?? [];
-            $candidates = array_merge($candidates, $wildcardCandidates);
+            /** @var int[] $wildcardCandidates */
+            $wildcardCandidates = isset($this->index['*']) ? $this->index['*'] : [];
+            foreach ($wildcardCandidates as $wc) {
+                $candidates[] = $wc;
+            }
         }
 
         foreach ($candidates as $idx) {
-            $route = $this->routes[$idx];
-
-            if ($route['method'] !== $method) {
+            if ($this->routeMethods[$idx] !== $method) {
                 continue;
             }
 
-            if ($route['params'] === []) {
+            $routeParams = $this->routeParams[$idx];
+
+            if ($routeParams === []) {
                 // Static route — direct comparison
-                if ($route['pattern'] === $path) {
-                    return new RouteMatch($route['handler'], []);
+                if ($this->routePatterns[$idx] === $path) {
+                    return new RouteMatch($this->routeHandlers[$idx], []);
                 }
                 continue;
             }
 
             // Dynamic route — regex match
+            /** @var string[] $matches */
             $matches = [];
-            if (preg_match($route['regex'], $path, $matches) === 1) {
+            if (preg_match($this->routeRegexes[$idx], $path, $matches) === 1) {
                 /** @var array<string, string> $params */
                 $params = [];
-                foreach ($route['params'] as $name) {
+                foreach ($routeParams as $name) {
                     if (isset($matches[$name])) {
                         $params[$name] = (string) $matches[$name];
                     }
                 }
-                return new RouteMatch($route['handler'], $params);
+                return new RouteMatch($this->routeHandlers[$idx], $params);
             }
         }
 
@@ -196,60 +220,68 @@ final class Router
      */
     public function getNamedRoute(string $routeName): ?string
     {
-        foreach ($this->routes as $route) {
-            if ($route['name'] === $routeName) {
-                return $route['pattern'];
-            }
+        if (!isset($this->namedRoutes[$routeName])) {
+            return null;
         }
-        return null;
+        $idx = $this->namedRoutes[$routeName];
+        return $this->routePatterns[$idx];
     }
 
     /**
-     * Compile a route pattern into a regex and extract parameter names.
+     * Build a regex from a route pattern and collect param names.
      *
      * /users/{id}/posts/{slug} → regex + ['id', 'slug']
      *
-     * @return array<int, mixed>  [string $regex, string[] $params]
-     */
-    private function compilePattern(string $pattern): array
-    {
-        $params = [];
-        $regex = $this->buildRegex($pattern, $params);
-
-        return [$regex, $params];
-    }
-
-    /**
+     * Uses manual parsing instead of preg_split + PREG_SPLIT_DELIM_CAPTURE
+     * for KPHP compatibility (PREG_SPLIT_DELIM_CAPTURE support is unreliable).
+     *
      * @param string[] $params  filled by reference
      * @return string  full regex with anchors
      */
     private function buildRegex(string $pattern, array &$params): string
     {
-        $parts = preg_split('/(\{[a-zA-Z_][a-zA-Z0-9_]*\})/', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE);
-        if ($parts === false) {
-            return '#^' . preg_quote($pattern, '#') . '$#';
-        }
+        $regex  = '#^';
+        $len    = strlen($pattern);
+        $i      = 0;
+        $static = '';
 
-        $regex = '#^';
-        foreach ($parts as $part) {
-            if (substr($part, 0, 1) === '{' && substr($part, -1) === '}') {
-                $name = substr($part, 1, -1);
+        while ($i < $len) {
+            if ($pattern[$i] === '{') {
+                // Flush buffered static segment
+                if ($static !== '') {
+                    $regex .= preg_quote($static, '#');
+                    $static = '';
+                }
+                // Read param name until '}'
+                $j = $i + 1;
+                while ($j < $len && $pattern[$j] !== '}') {
+                    $j++;
+                }
+                $name     = substr($pattern, $i + 1, $j - $i - 1);
                 $params[] = $name;
-                $regex .= '(?P<' . $name . '>[^/]+)';
+                $regex   .= '(?P<' . $name . '>[^/]+)';
+                $i        = $j + 1;
             } else {
-                $regex .= preg_quote($part, '#');
+                $static .= $pattern[$i];
+                $i++;
             }
         }
+
+        if ($static !== '') {
+            $regex .= preg_quote($static, '#');
+        }
+
         $regex .= '$#';
 
         return $regex;
     }
 
     /**
-     * Extract the first meaningful path segment for indexing.
+     * Extract the first meaningful path segment for prefix indexing.
      * /api/users/42  → "api"
      * /              → "/"
      * /users         → "users"
+     * /{id}/...      → "*"
      */
     private function firstSegment(string $path): string
     {
@@ -258,9 +290,9 @@ final class Router
             return '/';
         }
         $slashPos = strpos($trimmed, '/');
-        $segment = $slashPos === false ? $trimmed : substr($trimmed, 0, $slashPos);
+        $segment  = $slashPos === false ? $trimmed : substr($trimmed, 0, $slashPos);
 
-        // If the segment is a dynamic placeholder, use wildcard key
+        // Dynamic placeholder → wildcard bucket
         if (substr($segment, 0, 1) === '{') {
             return '*';
         }

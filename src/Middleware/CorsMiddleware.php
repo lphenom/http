@@ -14,21 +14,43 @@ use LPhenom\Http\Response;
  *
  * Handles preflight OPTIONS requests and injects Access-Control headers
  * into all responses.
+ *
+ * KPHP-compatible: no constructor property promotion, no readonly.
  */
 final class CorsMiddleware implements MiddlewareInterface
 {
+    /** @var string[] */
+    private array $allowedOrigins;
+
+    /** @var string[] */
+    private array $allowedMethods;
+
+    /** @var string[] */
+    private array $allowedHeaders;
+
+    /** @var bool */
+    private bool $allowCredentials;
+
+    /** @var int */
+    private int $maxAge;
+
     /**
      * @param string[] $allowedOrigins  e.g. ['https://example.com'] or ['*']
      * @param string[] $allowedMethods  e.g. ['GET', 'POST', 'OPTIONS']
      * @param string[] $allowedHeaders  e.g. ['Content-Type', 'Authorization']
      */
     public function __construct(
-        private readonly array $allowedOrigins = ['*'],
-        private readonly array $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        private readonly array $allowedHeaders = ['Content-Type', 'Authorization', 'X-Requested-With'],
-        private readonly bool $allowCredentials = false,
-        private readonly int $maxAge = 86400,
+        array $allowedOrigins = ['*'],
+        array $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        array $allowedHeaders = ['Content-Type', 'Authorization', 'X-Requested-With'],
+        bool $allowCredentials = false,
+        int $maxAge = 86400
     ) {
+        $this->allowedOrigins   = $allowedOrigins;
+        $this->allowedMethods   = $allowedMethods;
+        $this->allowedHeaders   = $allowedHeaders;
+        $this->allowCredentials = $allowCredentials;
+        $this->maxAge           = $maxAge;
     }
 
     public function process(Request $request, Next $next): Response

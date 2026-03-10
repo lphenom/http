@@ -7,17 +7,22 @@ namespace LPhenom\Http;
 /**
  * Result of a successful route match.
  *
- * Replaces the anonymous array returned by Router::match() to provide
- * strict typing compatible with KPHP (no mixed-type arrays).
+ * KPHP-compatible: no constructor property promotion, no readonly.
  */
 final class RouteMatch
 {
+    /** @var HandlerInterface */
+    public HandlerInterface $handler;
+
+    /** @var array<string, string> */
+    public array $params;
+
     /**
      * @param array<string, string> $params
      */
-    public function __construct(
-        public readonly HandlerInterface $handler,
-        public readonly array $params,
-    ) {
+    public function __construct(HandlerInterface $handler, array $params)
+    {
+        $this->handler = $handler;
+        $this->params  = $params;
     }
 }
