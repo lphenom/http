@@ -21,8 +21,11 @@ interface MiddlewareInterface
 }
 ```
 
-Call `$next($request)` to pass control to the next middleware (or the final handler).
+Call `$next->handle($request)` to pass control to the next middleware (or the final handler).
 Return a `Response` directly to **short-circuit** the remaining pipeline.
+
+> **KPHP note:** `__invoke()` is NOT supported in KPHP.  
+> Always use `$next->handle($request)` — **not** `$next($request)`.
 
 ---
 
@@ -146,7 +149,7 @@ final class AuthMiddleware implements MiddlewareInterface
         }
 
         // Continue pipeline
-        return $next($request);
+        return $next->handle($request);
     }
 }
 ```
@@ -158,20 +161,23 @@ final class AuthMiddleware implements MiddlewareInterface
 `Next` is a stateful class that advances the pipeline by one step each time it is called.
 It is **not** a closure — KPHP-compatible.
 
+> **KPHP note:** use `$next->handle($request)` — NOT `$next($request)`.  
+> `__invoke()` is not supported in KPHP.
+
 ```
-$next($request)   — calls the next middleware or the final handler
-return $response  — short-circuits: remaining middleware and handler are skipped
+$next->handle($request)   — calls the next middleware or the final handler
+return $response          — short-circuits: remaining middleware and handler are skipped
 ```
 
 Execution model (three middleware, one handler):
 
 ```
 → M1.process()
-    → $next($request)          // advances to M2
+    → $next->handle($request)          // advances to M2
         → M2.process()
-            → $next($request)  // advances to M3
+            → $next->handle($request)  // advances to M3
                 → M3.process()
-                    → $next($request)  // calls handler
+                    → $next->handle($request)  // calls handler
                     ← Response
                 ← Response
             ← Response
@@ -180,7 +186,7 @@ Execution model (three middleware, one handler):
 ← Response
 ```
 
-If `M2` returns early without calling `$next`, `M3` and the handler are never called.
+If `M2` returns early without calling `$next->handle()`, `M3` and the handler are never called.
 
 ---
 
@@ -202,6 +208,6 @@ if ($match === null) {
     exit;
 }
 
-$stack->run($request, $match['handler'])->send();
+$stack->run($request, $match->handler)->send();
 ```
 

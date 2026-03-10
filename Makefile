@@ -32,6 +32,10 @@ fix:
 stan:
 	docker compose run --rm app ./vendor/bin/phpstan analyse
 
+## Run KPHP + PHAR compatibility check
+kphp-check:
+	docker build -f Dockerfile.check -t lphenom-http-check .
+
 ## Open shell in app container
 shell:
 	docker compose run --rm app bash

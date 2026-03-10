@@ -23,14 +23,14 @@ $router->get('/health', new class implements HandlerInterface {
 });
 
 $request = Request::fromGlobals();
-$match   = $router->match($request->getMethod(), $request->getPath());
+$match = $router->match($request->getMethod(), $request->getPath());
 
 if ($match === null) {
     Response::text('Not Found', 404)->send();
     exit;
 }
 
-$match['handler']->handle($request)->send();
+$match->handler->handle($request)->send();
 ```
 
 ---
@@ -105,15 +105,28 @@ Returns `null` if the name does not exist.
 Group routes under a shared prefix with `group()`. Groups can be nested.
 The prefix is **not** leaked to routes registered after the group.
 
+> **KPHP note:** `\Closure` is not supported as a typed callback in KPHP.  
+> Use `RouterGroupCallback` interface instead of anonymous functions.
+
 ```php
-$router->group('/api', function (Router $r): void {
+use LPhenom\Http\RouterGroupCallback;
 
-    $r->get('/users', new UserListHandler());     // matches /api/users
-    $r->post('/users', new UserCreateHandler());  // matches /api/users
+// PHP 8.1+ shared hosting mode (Closure is fine for non-KPHP)
+// For KPHP-compiled binary, use RouterGroupCallback:
 
-    $r->group('/admin', function (Router $r): void {
-        $r->get('/stats', new StatsHandler());    // matches /api/admin/stats
-    });
+$router->group('/api', new class implements RouterGroupCallback {
+    public function call(Router $r): void
+    {
+        $r->get('/users', new UserListHandler());    // matches /api/users
+        $r->post('/users', new UserCreateHandler()); // matches /api/users
+
+        $r->group('/admin', new class implements RouterGroupCallback {
+            public function call(Router $r): void
+            {
+                $r->get('/stats', new StatsHandler()); // matches /api/admin/stats
+            }
+        });
+    }
 });
 
 $router->get('/health', new HealthHandler());     // matches /health (no prefix)
