@@ -70,7 +70,7 @@ final class MiddlewareStackTest extends TestCase
             public function process(Request $request, Next $next): Response
             {
                 $this->log[] = 'before-A';
-                $response = $next($request);
+                $response = $next->handle($request);
                 $this->log[] = 'after-A';
                 return $response;
             }
@@ -84,7 +84,7 @@ final class MiddlewareStackTest extends TestCase
             public function process(Request $request, Next $next): Response
             {
                 $this->log[] = 'before-B';
-                $response = $next($request);
+                $response = $next->handle($request);
                 $this->log[] = 'after-B';
                 return $response;
             }

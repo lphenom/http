@@ -9,6 +9,7 @@ use LPhenom\Http\Request;
 use LPhenom\Http\Response;
 use LPhenom\Http\RouteMatch;
 use LPhenom\Http\Router;
+use LPhenom\Http\RouterGroupCallback;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase
@@ -104,8 +105,15 @@ final class RouterTest extends TestCase
         $router = new Router();
         $handler = $this->makeHandler();
 
-        $router->group('/api', function (Router $r) use ($handler): void {
-            $r->add('GET', '/users', $handler);
+        $router->group('/api', new class ($handler) implements RouterGroupCallback {
+            public function __construct(private readonly HandlerInterface $handler)
+            {
+            }
+
+            public function call(Router $r): void
+            {
+                $r->add('GET', '/users', $this->handler);
+            }
         });
 
         $result = $router->match('GET', '/api/users');
@@ -119,10 +127,24 @@ final class RouterTest extends TestCase
         $router = new Router();
         $handler = $this->makeHandler();
 
-        $router->group('/api', function (Router $r) use ($handler): void {
-            $r->group('/v1', function (Router $r) use ($handler): void {
-                $r->add('GET', '/users', $handler);
-            });
+        $router->group('/api', new class ($handler) implements RouterGroupCallback {
+            public function __construct(private readonly HandlerInterface $handler)
+            {
+            }
+
+            public function call(Router $r): void
+            {
+                $r->group('/v1', new class ($this->handler) implements RouterGroupCallback {
+                    public function __construct(private readonly HandlerInterface $handler)
+                    {
+                    }
+
+                    public function call(Router $r): void
+                    {
+                        $r->add('GET', '/users', $this->handler);
+                    }
+                });
+            }
         });
 
         self::assertNotNull($router->match('GET', '/api/v1/users'));
@@ -133,8 +155,15 @@ final class RouterTest extends TestCase
         $router = new Router();
         $handler = $this->makeHandler();
 
-        $router->group('/api', function (Router $r) use ($handler): void {
-            $r->add('GET', '/users', $handler);
+        $router->group('/api', new class ($handler) implements RouterGroupCallback {
+            public function __construct(private readonly HandlerInterface $handler)
+            {
+            }
+
+            public function call(Router $r): void
+            {
+                $r->add('GET', '/users', $this->handler);
+            }
         });
         $router->add('GET', '/health', $handler);
 
