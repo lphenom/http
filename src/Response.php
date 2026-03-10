@@ -27,7 +27,7 @@ final class Response
     public function __construct(
         int $status = 200,
         array $headers = [],
-        string $body = ''
+        string $body = '',
     ) {
         $this->status  = $status;
         $this->headers = $headers;
@@ -141,19 +141,45 @@ final class Response
      */
     private function reasonPhrase(int $status): string
     {
-        if ($status === 200) { return 'OK'; }
-        if ($status === 201) { return 'Created'; }
-        if ($status === 204) { return 'No Content'; }
-        if ($status === 301) { return 'Moved Permanently'; }
-        if ($status === 302) { return 'Found'; }
-        if ($status === 400) { return 'Bad Request'; }
-        if ($status === 401) { return 'Unauthorized'; }
-        if ($status === 403) { return 'Forbidden'; }
-        if ($status === 404) { return 'Not Found'; }
-        if ($status === 405) { return 'Method Not Allowed'; }
-        if ($status === 422) { return 'Unprocessable Entity'; }
-        if ($status === 429) { return 'Too Many Requests'; }
-        if ($status === 500) { return 'Internal Server Error'; }
+        if ($status === 200) {
+            return 'OK';
+        }
+        if ($status === 201) {
+            return 'Created';
+        }
+        if ($status === 204) {
+            return 'No Content';
+        }
+        if ($status === 301) {
+            return 'Moved Permanently';
+        }
+        if ($status === 302) {
+            return 'Found';
+        }
+        if ($status === 400) {
+            return 'Bad Request';
+        }
+        if ($status === 401) {
+            return 'Unauthorized';
+        }
+        if ($status === 403) {
+            return 'Forbidden';
+        }
+        if ($status === 404) {
+            return 'Not Found';
+        }
+        if ($status === 405) {
+            return 'Method Not Allowed';
+        }
+        if ($status === 422) {
+            return 'Unprocessable Entity';
+        }
+        if ($status === 429) {
+            return 'Too Many Requests';
+        }
+        if ($status === 500) {
+            return 'Internal Server Error';
+        }
         return 'Unknown';
     }
 }

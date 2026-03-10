@@ -50,7 +50,7 @@ final class Request
         array $cookies,
         string $body,
         array $files,
-        string $clientIp
+        string $clientIp,
     ) {
         $this->method   = $method;
         $this->path     = $path;
