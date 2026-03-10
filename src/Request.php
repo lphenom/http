@@ -160,7 +160,7 @@ final class Request
             if (!is_string($key) || !is_string($value)) {
                 continue;
             }
-            if (str_starts_with($key, 'HTTP_')) {
+            if (substr($key, 0, 5) === 'HTTP_') {
                 $headerName = str_replace('_', '-', substr($key, 5));
                 $headers[$headerName] = $value;
             } elseif ($key === 'CONTENT_TYPE') {

@@ -79,7 +79,11 @@ final class Response
      */
     public static function json(array $data, int $status = 200): self
     {
-        $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        // JSON_THROW_ON_ERROR is not supported in KPHP — check manually
+        $encoded = json_encode($data, JSON_UNESCAPED_UNICODE);
+        if ($encoded === false) {
+            $encoded = '{}';
+        }
         return new self($status, ['Content-Type' => 'application/json'], $encoded);
     }
 

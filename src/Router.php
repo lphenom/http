@@ -17,9 +17,9 @@ final class Router
     /**
      * Each entry:
      *  ['method' => string, 'pattern' => string, 'regex' => string,
-     *   'params' => string[], 'handler' => HandlerInterface, 'name' => ?string]
+     *   'params' => string[], 'handler' => HandlerInterface, 'name' => string|null]
      *
-     * @var array<int, array{method: string, pattern: string, regex: string, params: string[], handler: HandlerInterface, name: string|null}>
+     * @var array<int, array<string, mixed>>
      */
     private array $routes = [];
 
@@ -38,10 +38,10 @@ final class Router
         $fullPath = $this->currentPrefix . '/' . ltrim($path, '/');
 
         // Normalize double slashes
-        while (str_contains($fullPath, '//')) {
+        while (strpos($fullPath, '//') !== false) {
             $fullPath = str_replace('//', '/', $fullPath);
         }
-        if ($fullPath !== '/' && str_ends_with($fullPath, '/')) {
+        if ($fullPath !== '/' && substr($fullPath, -1) === '/') {
             $fullPath = rtrim($fullPath, '/');
         }
 
@@ -111,14 +111,15 @@ final class Router
      * Group routes under a common prefix.
      * Callback receives this Router instance.
      *
-     * @param \Closure(self): void $callback
+     * KPHP note: \Closure is not reliably storable in arrays under KPHP.
+     * The callback is called immediately — it is never stored.
      */
-    public function group(string $prefix, \Closure $callback): self
+    public function group(string $prefix, RouterGroupCallback $callback): self
     {
         $previousPrefix = $this->currentPrefix;
         $this->currentPrefix = $previousPrefix . '/' . ltrim($prefix, '/');
 
-        $callback($this);
+        $callback->call($this);
 
         $this->currentPrefix = $previousPrefix;
 
@@ -208,7 +209,7 @@ final class Router
      *
      * /users/{id}/posts/{slug} → regex + ['id', 'slug']
      *
-     * @return array{string, string[]}
+     * @return array<int, mixed>  [string $regex, string[] $params]
      */
     private function compilePattern(string $pattern): array
     {
@@ -231,7 +232,7 @@ final class Router
 
         $regex = '#^';
         foreach ($parts as $part) {
-            if (str_starts_with($part, '{') && str_ends_with($part, '}')) {
+            if (substr($part, 0, 1) === '{' && substr($part, -1) === '}') {
                 $name = substr($part, 1, -1);
                 $params[] = $name;
                 $regex .= '(?P<' . $name . '>[^/]+)';
@@ -260,7 +261,7 @@ final class Router
         $segment = $slashPos === false ? $trimmed : substr($trimmed, 0, $slashPos);
 
         // If the segment is a dynamic placeholder, use wildcard key
-        if (str_starts_with($segment, '{')) {
+        if (substr($segment, 0, 1) === '{') {
             return '*';
         }
 
