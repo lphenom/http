@@ -68,6 +68,11 @@ WORKDIR /build
 # phar.readonly must be Off to allow creating PHAR archives
 RUN echo "phar.readonly = Off" > /usr/local/etc/php/conf.d/phar.ini
 
+# Install system deps required by Composer (git for VCS repos, unzip for dist)
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends git unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Composer (pinned version)
 COPY --from=composer:2.9.5 /usr/bin/composer /usr/bin/composer
 
@@ -75,6 +80,8 @@ COPY --from=composer:2.9.5 /usr/bin/composer /usr/bin/composer
 COPY src/          ./src/
 COPY build/        ./build/
 COPY composer.json ./composer.json
+# Copy lock file if present (speeds up installs and pins versions)
+COPY composer.lock* ./
 
 # Install production dependencies only (no dev)
 RUN composer install \
