@@ -1,13 +1,13 @@
-# Middleware
+# Middleware (Промежуточное ПО)
 
-`lphenom/http` provides a simple, ordered middleware pipeline with short-circuit support.
-All middleware is KPHP-compatible: no closures captured by reference, no reflection.
+`lphenom/http` предоставляет простой упорядоченный конвейер middleware с поддержкой короткого замыкания.
+Весь middleware совместим с KPHP: без замыканий по ссылке, без reflection.
 
 ---
 
-## MiddlewareInterface Contract
+## Контракт MiddlewareInterface
 
-Every middleware must implement `MiddlewareInterface`:
+Каждый middleware должен реализовывать `MiddlewareInterface`:
 
 ```php
 use LPhenom\Http\MiddlewareInterface;
@@ -21,15 +21,15 @@ interface MiddlewareInterface
 }
 ```
 
-Call `$next->handle($request)` to pass control to the next middleware (or the final handler).
-Return a `Response` directly to **short-circuit** the remaining pipeline.
+Вызовите `$next->handle($request)`, чтобы передать управление следующему middleware (или конечному обработчику).
+Верните `Response` напрямую для **короткого замыкания** оставшегося конвейера.
 
-> **KPHP note:** `__invoke()` is NOT supported in KPHP.  
-> Always use `$next->handle($request)` — **not** `$next($request)`.
+> **Примечание для KPHP:** `__invoke()` НЕ поддерживается в KPHP.  
+> Всегда используйте `$next->handle($request)` — **не** `$next($request)`.
 
 ---
 
-## MiddlewareStack Usage
+## Использование MiddlewareStack
 
 ```php
 use LPhenom\Http\MiddlewareStack;
@@ -44,20 +44,20 @@ $response = $stack->run($request, $handler);
 $response->send();
 ```
 
-Middleware executes in the order it was added:
+Middleware выполняется в порядке добавления:
 
 ```
-Request → Middleware A → Middleware B → Handler
-Response ←            ←              ←
+Запрос → Middleware A → Middleware B → Обработчик
+Ответ  ←             ←              ←
 ```
 
 ---
 
-## Built-in Middleware
+## Встроенные middleware
 
 ### CorsMiddleware
 
-Handles CORS preflight (`OPTIONS`) and injects `Access-Control-*` headers.
+Обрабатывает CORS preflight-запросы (`OPTIONS`) и добавляет заголовки `Access-Control-*`.
 
 ```php
 use LPhenom\Http\Middleware\CorsMiddleware;
@@ -71,16 +71,16 @@ $cors = new CorsMiddleware(
 );
 ```
 
-- `OPTIONS` request → returns `204` with CORS headers, handler is **not** called.
-- Other methods → CORS headers are appended to the handler's response.
-- `allowedOrigins: ['*']` allows any origin (not sent when `allowCredentials: true`).
-- Disallowed origins receive no `Access-Control-*` headers.
+- Запрос `OPTIONS` → возвращает `204` с CORS-заголовками, обработчик **не вызывается**.
+- Остальные методы → CORS-заголовки добавляются к ответу обработчика.
+- `allowedOrigins: ['*']` разрешает любой origin (не отправляется при `allowCredentials: true`).
+- Запросы с недопустимым origin не получают заголовки `Access-Control-*`.
 
 ---
 
-### CsrfMiddleware *(stub)*
+### CsrfMiddleware *(заглушка)*
 
-Validates `X-CSRF-Token` header for mutating requests (`POST`, `PUT`, `PATCH`, `DELETE`).
+Проверяет заголовок `X-CSRF-Token` для мутирующих запросов (`POST`, `PUT`, `PATCH`, `DELETE`).
 
 ```php
 use LPhenom\Http\Middleware\CsrfMiddleware;
@@ -90,34 +90,34 @@ $csrf = new CsrfMiddleware(
     sessionId: $currentSessionId,
 );
 
-// Generate token to embed in forms / SPA:
+// Генерация токена для встраивания в формы / SPA:
 $token = $csrf->generateToken($currentSessionId);
 ```
 
-- `GET`, `HEAD`, `OPTIONS` pass through without validation.
-- Mutating requests without a valid `X-CSRF-Token` header receive `403 Forbidden`.
-- Token is `hmac_sha256($sessionId, $secret)`.
+- `GET`, `HEAD`, `OPTIONS` проходят без проверки.
+- Мутирующие запросы без корректного заголовка `X-CSRF-Token` получают ответ `403 Forbidden`.
+- Токен формируется как `hmac_sha256($sessionId, $secret)`.
 
-> **TODO:** full CSRF token storage (session-backed / cookie double-submit pattern)
-> will be implemented when `lphenom/session` is available.
+> **TODO:** полное хранилище CSRF-токенов (на основе сессий / паттерн cookie double-submit)
+> будет реализовано после появления пакета `lphenom/session`.
 
 ---
 
 ### RateLimitMiddleware
 
-Delegates rate limiting to a `RateLimiterInterface` implementation — keeping
-`lphenom/http` decoupled from any specific cache backend.
+Делегирует ограничение частоты запросов реализации `RateLimiterInterface` —
+сохраняя `lphenom/http` независимым от конкретного кэш-бэкенда.
 
 ```php
 use LPhenom\Http\Middleware\RateLimitMiddleware;
 use LPhenom\Http\Middleware\RateLimiterInterface;
 
-// Implement your own limiter backed by Redis / APCu / lphenom/cache:
+// Реализуйте свой ограничитель на основе Redis / APCu / lphenom/cache:
 final class RedisRateLimiter implements RateLimiterInterface
 {
     public function isAllowed(string $clientIp): bool
     {
-        // increment counter in Redis, return false when limit exceeded
+        // увеличиваем счётчик в Redis, возвращаем false при превышении лимита
         return true;
     }
 }
@@ -125,11 +125,11 @@ final class RedisRateLimiter implements RateLimiterInterface
 $stack->add(new RateLimitMiddleware(new RedisRateLimiter()));
 ```
 
-Returns `429 Too Many Requests` when `isAllowed()` returns `false`.
+Возвращает `429 Too Many Requests`, когда `isAllowed()` возвращает `false`.
 
 ---
 
-## Writing Custom Middleware
+## Написание собственного middleware
 
 ```php
 use LPhenom\Http\MiddlewareInterface;
@@ -144,11 +144,11 @@ final class AuthMiddleware implements MiddlewareInterface
         $token = $request->getHeader('Authorization');
 
         if ($token === null || $token === '') {
-            // Short-circuit: return immediately without calling $next
+            // Короткое замыкание: возвращаем ответ немедленно без вызова $next
             return Response::text('Unauthorized', 401);
         }
 
-        // Continue pipeline
+        // Продолжаем конвейер
         return $next->handle($request);
     }
 }
@@ -156,28 +156,28 @@ final class AuthMiddleware implements MiddlewareInterface
 
 ---
 
-## Next / Short-Circuit
+## Next / Короткое замыкание
 
-`Next` is a stateful class that advances the pipeline by one step each time it is called.
-It is **not** a closure — KPHP-compatible.
+`Next` — это класс с состоянием, который продвигает конвейер на один шаг при каждом вызове.
+Это **не** замыкание — совместимо с KPHP.
 
-> **KPHP note:** use `$next->handle($request)` — NOT `$next($request)`.  
-> `__invoke()` is not supported in KPHP.
+> **Примечание для KPHP:** используйте `$next->handle($request)` — НЕ `$next($request)`.  
+> `__invoke()` не поддерживается в KPHP.
 
 ```
-$next->handle($request)   — calls the next middleware or the final handler
-return $response          — short-circuits: remaining middleware and handler are skipped
+$next->handle($request)   — вызывает следующий middleware или конечный обработчик
+return $response          — короткое замыкание: оставшиеся middleware и обработчик пропускаются
 ```
 
-Execution model (three middleware, one handler):
+Модель выполнения (три middleware, один обработчик):
 
 ```
 → M1.process()
-    → $next->handle($request)          // advances to M2
+    → $next->handle($request)          // переходит к M2
         → M2.process()
-            → $next->handle($request)  // advances to M3
+            → $next->handle($request)  // переходит к M3
                 → M3.process()
-                    → $next->handle($request)  // calls handler
+                    → $next->handle($request)  // вызывает обработчик
                     ← Response
                 ← Response
             ← Response
@@ -186,11 +186,11 @@ Execution model (three middleware, one handler):
 ← Response
 ```
 
-If `M2` returns early without calling `$next->handle()`, `M3` and the handler are never called.
+Если `M2` возвращает ответ досрочно без вызова `$next->handle()`, то `M3` и обработчик не вызываются.
 
 ---
 
-## Combining Router + MiddlewareStack
+## Совместное использование Router + MiddlewareStack
 
 ```php
 $router = new Router();
@@ -210,4 +210,3 @@ if ($match === null) {
 
 $stack->run($request, $match->handler)->send();
 ```
-

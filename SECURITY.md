@@ -1,24 +1,20 @@
-# Security Policy
+# Политика безопасности
 
-## Supported Versions
+## Поддерживаемые версии
 
-| Version | Supported          |
-|---------|--------------------|
-| 0.1.x   | :white_check_mark: |
+| Версия | Поддержка |
+|--------|-----------|
+| 0.x    | ✅         |
 
-## Reporting a Vulnerability
+## Сообщить об уязвимости
 
-If you discover a security vulnerability in `lphenom/http`, please report it **privately** by emailing:
+Пожалуйста, **не** создавайте публичный GitHub Issue для уязвимостей безопасности.
 
-**popkovd.o@yandex.ru**
+Отправьте подробный отчёт на **popkovd.o@yandex.ru**, указав:
 
-Please include:
-- A description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (optional)
+- Описание уязвимости
+- Шаги для воспроизведения
+- Затронутые версии
+- Предлагаемое исправление (опционально)
 
-We will acknowledge receipt within **72 hours** and aim to provide a fix or mitigation within **14 days**.
-
-**Please do not open public GitHub issues for security vulnerabilities.**
-
+Мы стремимся ответить в течение **72 часов** и выпустить патч в течение **7 дней** для подтверждённых проблем.
