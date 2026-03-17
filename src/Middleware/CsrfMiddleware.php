@@ -15,9 +15,9 @@ use LPhenom\Http\Response;
  * For mutating methods (POST/PUT/PATCH/DELETE) it validates the
  * X-CSRF-Token request header against an HMAC-derived token.
  *
- * KPHP-compatible: no constructor property promotion, no readonly, no hash_equals.
- * hash_equals() is not available in KPHP — use hash comparison via hash() to
- * avoid timing oracle (both values are hashed before comparison).
+ * KPHP-compatible: no constructor property promotion, no readonly.
+ * hash_equals() IS supported in KPHP (builtin-functions/kphp-light/hash.txt)
+ * and is used here for constant-time token comparison.
  */
 final class CsrfMiddleware implements MiddlewareInterface
 {

@@ -215,8 +215,24 @@ KPHP **не поддерживает** Composer PSR-4 autoloading.
 Все файлы включаются явно через `build/kphp-entrypoint.php` в порядке зависимостей:
 
 ```
-Interfaces → Exceptions → Value objects → MiddlewareInterface → Next → Router → Stack → Middleware → Controllers
+HandlerInterface
+  → RouteMatch
+  → Request, Response
+  → MiddlewareInterface → Next
+  → Router              ← должен быть ДО RouterGroupCallback!
+  → RouterGroupCallback ← ссылается на Router
+  → RateLimiterInterface
+  → RouteNotFoundException
+  → MiddlewareStack
+  → CorsMiddleware, CsrfMiddleware, RateLimitMiddleware
+  → AbstractController
 ```
+
+> **⚠️ Важно для vendor-использования:** `RouterGroupCallback` ссылается на `Router`
+> в сигнатуре метода `call(Router $router): void`.  
+> Поэтому `Router.php` **обязан** быть загружен раньше `RouterGroupCallback.php`.  
+> Если в вашем kphp-entrypoint файлы vendor грузятся в алфавитном порядке,
+> убедитесь что `Router.php` стоит перед `RouterGroupCallback.php`.
 
 Порядок важен: `MiddlewareInterface` должен быть объявлен **до** `Next`, который его использует.
 
