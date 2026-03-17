@@ -13,7 +13,7 @@ return (new PhpCsFixer\Config())
         'array_syntax'                         => ['syntax' => 'short'],
         'no_unused_imports'                    => true,
         'ordered_imports'                      => ['sort_algorithm' => 'alpha'],
-        'trailing_comma_in_multiline'          => ['elements' => ['arrays', 'parameters', 'arguments']],
+        'trailing_comma_in_multiline'          => ['elements' => ['arrays', 'arguments']],
         'single_quote'                         => true,
         'no_whitespace_in_blank_line'          => true,
         'blank_line_after_namespace'           => true,

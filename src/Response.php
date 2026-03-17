@@ -27,7 +27,7 @@ final class Response
     public function __construct(
         int $status = 200,
         array $headers = [],
-        string $body = '',
+        string $body = ''
     ) {
         $this->status  = $status;
         $this->headers = $headers;
